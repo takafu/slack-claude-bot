@@ -1,0 +1,41 @@
+{
+  "name": "slack-claude-bot",
+  "version": "1.0.0",
+  "description": "Slack bot that integrates with Claude Code CLI for AI-powered responses",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "slack",
+    "claude",
+    "bot",
+    "ai",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/takafu/slack-claude-bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/takafu/slack-claude-bot/issues"
+  },
+  "homepage": "https://github.com/takafu/slack-claude-bot#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "@slack/bolt": "^4.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
