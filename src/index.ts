@@ -200,14 +200,20 @@ app.message(async ({ message, say }) => {
   // Ignore bot messages
   if ('bot_id' in message) return;
 
+  // Get message text (remove mentions)
+  const rawText = 'text' in message ? message.text : '';
+  if (!rawText) return;
+
+  // If message has mention, let app_mention handle it
+  if (/<@[A-Z0-9]+>/.test(rawText)) return;
+
+  const text = rawText.trim();
+
   const threadKey = getThreadKey(message.channel, message.thread_ts);
 
   // Only respond if session exists for this thread
   const sessionId = threadSessions.get(threadKey);
   if (!sessionId) return;
-
-  const text = 'text' in message ? message.text : '';
-  if (!text) return;
 
   try {
     const thinkingMsg = await say({ text: 'Thinking... :thinking_face:', thread_ts: message.thread_ts });
