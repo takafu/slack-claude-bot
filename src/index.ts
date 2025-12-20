@@ -38,7 +38,12 @@ interface ClaudeResponse {
 /**
  * Call Claude Code CLI with JSON output
  */
-async function callClaude(message: string, sessionId?: string): Promise<ClaudeResponse> {
+async function callClaude(
+  message: string,
+  channel: string,
+  threadTs: string,
+  sessionId?: string
+): Promise<ClaudeResponse> {
   return new Promise((resolve, reject) => {
     const args = ['-p', '--dangerously-skip-permissions', '--output-format', 'json'];
 
@@ -54,7 +59,11 @@ async function callClaude(message: string, sessionId?: string): Promise<ClaudeRe
     // Use `script` command to emulate TTY for Claude CLI
     const claudeCommand = ['claude', ...args].map(a => `'${a.replace(/'/g, "'\\''")}'`).join(' ');
     const proc = spawn('script', ['-q', '-c', `bash -l -c "${claudeCommand}"`, '/dev/null'], {
-      env: { ...process.env },
+      env: {
+        ...process.env,
+        SLACK_CHANNEL: channel,
+        SLACK_THREAD_TS: threadTs,
+      },
     });
 
     let stdout = '';
@@ -138,14 +147,16 @@ app.event('app_mention', async ({ event, say }) => {
   }
 
   try {
-    // Show thinking indicator
-    const thinkingMsg = await say({ text: 'Thinking... :thinking_face:', thread_ts: threadTs });
-
     // Get existing session
     const existingSession = threadSessions.get(threadKey);
 
-    // Call Claude
-    const { result, sessionId: newSessionId } = await callClaude(text, existingSession);
+    // Call Claude - it will handle all Slack interactions (messages, reactions, etc.)
+    const { result, sessionId: newSessionId } = await callClaude(
+      text,
+      event.channel,
+      threadTs,
+      existingSession
+    );
 
     // Store new session ID
     if (!existingSession && newSessionId) {
@@ -153,33 +164,8 @@ app.event('app_mention', async ({ event, say }) => {
       console.log(`New session for ${threadKey}: ${newSessionId}`);
     }
 
-    // Convert to Slack mrkdwn
-    console.log('Raw result from Claude:', JSON.stringify(result));
-    const slackText = toSlackMarkdown(result);
-    console.log('After toSlackMarkdown:', JSON.stringify(slackText));
-
-    // Reply (split if too long)
-    const maxLength = 3900; // Slack limit is 4000 chars
-    if (slackText.length <= maxLength) {
-      await say({ text: slackText, thread_ts: threadTs });
-    } else {
-      // Split into chunks
-      for (let i = 0; i < slackText.length; i += maxLength) {
-        const chunk = slackText.slice(i, i + maxLength);
-        await say({ text: chunk, thread_ts: threadTs });
-      }
-    }
-
-    // Delete thinking message
-    try {
-      await app.client.chat.delete({
-        token: SLACK_BOT_TOKEN,
-        channel: event.channel,
-        ts: thinkingMsg.ts as string,
-      });
-    } catch {
-      // Continue even if deletion fails
-    }
+    // Log result (Claude handles posting, so we just log)
+    console.log('Claude completed. Result:', result.slice(0, 100));
 
   } catch (error) {
     console.error('Error:', error);
@@ -216,30 +202,11 @@ app.message(async ({ message, say }) => {
   if (!sessionId) return;
 
   try {
-    const thinkingMsg = await say({ text: 'Thinking... :thinking_face:', thread_ts: message.thread_ts });
+    // Call Claude - it will handle all Slack interactions
+    const { result } = await callClaude(text, message.channel, message.thread_ts, sessionId);
 
-    const { result } = await callClaude(text, sessionId);
-    const slackText = toSlackMarkdown(result);
-
-    const maxLength = 3900;
-    if (slackText.length <= maxLength) {
-      await say({ text: slackText, thread_ts: message.thread_ts });
-    } else {
-      for (let i = 0; i < slackText.length; i += maxLength) {
-        const chunk = slackText.slice(i, i + maxLength);
-        await say({ text: chunk, thread_ts: message.thread_ts });
-      }
-    }
-
-    try {
-      await app.client.chat.delete({
-        token: SLACK_BOT_TOKEN,
-        channel: message.channel,
-        ts: thinkingMsg.ts as string,
-      });
-    } catch {
-      // Continue even if deletion fails
-    }
+    // Log result
+    console.log('Claude completed. Result:', result.slice(0, 100));
 
   } catch (error) {
     console.error('Error:', error);

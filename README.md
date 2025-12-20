@@ -7,7 +7,7 @@ A Slack bot that integrates with [Claude Code CLI](https://github.com/anthropics
 - **Thread-based sessions**: Each Slack thread maintains its own Claude session context
 - **Mention-triggered**: Responds when mentioned with `@bot-name`
 - **Automatic context continuation**: Follow-up messages in the same thread continue the conversation
-- **Markdown conversion**: Converts Claude's markdown output to Slack's mrkdwn format
+- **Claude controls Slack directly**: Claude has full access to Slack API to post messages, add reactions, etc.
 - **Socket Mode**: No public server required - connects via WebSocket
 
 ## Prerequisites
@@ -75,9 +75,16 @@ npm run build
 ## How It Works
 
 1. When mentioned, the bot spawns Claude Code CLI with the message
-2. Claude's response is converted from Markdown to Slack mrkdwn format
-3. The session ID is stored per thread for context continuation
-4. Subsequent messages in the thread automatically use the same session
+2. Claude receives environment variables:
+   - `SLACK_BOT_TOKEN`: Bot token for API access
+   - `SLACK_CHANNEL`: Current channel ID
+   - `SLACK_THREAD_TS`: Thread timestamp
+3. Claude uses Bash tool to call Slack API directly (via curl) for:
+   - Posting messages
+   - Adding reactions
+   - Any other Slack actions
+4. The session ID is stored per thread for context continuation
+5. Subsequent messages in the thread automatically use the same session
 
 ## Limitations
 

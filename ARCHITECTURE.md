@@ -138,3 +138,52 @@ tasks/
 - チームメンション検知はメッセージ内容をパースして判定
 - 監視はボットが参加しているチャンネルのみ
 - **Claude Code CLIは同時実行制限あり** - ボット実行中はClaude Code対話モードを使えない
+
+## 公式統合との比較
+
+Anthropicは2025年12月にClaude Code in Slackを研究プレビューとしてリリースした。
+公式ドキュメント: https://code.claude.com/docs/en/slack
+
+### 公式統合 (Claude Code in Slack)
+
+**特徴:**
+- Slack Marketplaceからインストール、`claude.ai/code`と連携
+- `@Claude`メンションで自動的にコーディングタスクを検知
+- スレッド/チャンネルの文脈を自動収集
+- GitHub専用、セッションごとに1PR作成
+- Webブラウザで`claude.ai/code`にアクセス必須
+
+**制約:**
+- ❌ GitHubのみ対応（GitLab/Bitbucket不可）
+- ❌ Bot名カスタマイズ不可（`@Claude`固定）
+- ❌ DMでは動作しない（チャンネルのみ）
+- ❌ @メンション必須（自律判断不可）
+- ❌ リアクション追加などの細かい制御不可
+- ❌ セッションごとに1PR制限
+
+### 本実装 (カスタムボット)
+
+**利点:**
+- ✅ VCS非依存（GitHub/GitLab/ローカルリポジトリ等）
+- ✅ Bot名・挙動を完全カスタマイズ可能
+- ✅ Slack API全機能を使用可能（リアクション、ピン、複数投稿等）
+- ✅ Claude側で自律判断（返信要否、アクション選択）
+- ✅ 環境変数でSlack APIアクセス権を渡し、Claude自身が操作
+- ✅ 軽量・ローカル実行（Termux環境）
+- ✅ セッション制限なし、複数PR可
+
+**用途の違い:**
+- **公式統合**: チームでのクイックスタート、GitHub PR中心ワークフロー
+- **本実装**: 柔軟な自動化、学習・実験用、Termux環境での運用
+
+### 本実装の設計判断
+
+**Claude側にSlack API制御を委譲:**
+- 環境変数 `SLACK_BOT_TOKEN`, `SLACK_CHANNEL`, `SLACK_THREAD_TS` を渡す
+- Claudeが自分でBashツール（curl）を使ってSlack APIを呼び出す
+- Bot側は返信の自動投稿を行わず、Claudeの判断に全て任せる
+
+**利点:**
+- 新しいアクション追加時にBot側のコード修正不要
+- Claudeが文脈から適切な行動を自律判断（リアクションのみ、複数メッセージ、何もしない等）
+- 統一感のある実装（返信もリアクションも全てClaude側で処理）
