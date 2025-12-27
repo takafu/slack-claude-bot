@@ -31,7 +31,13 @@ Set these in your shell environment (e.g., `~/.bashrc`):
 ```bash
 export SLACK_BOT_TOKEN="xoxb-..."  # Bot User OAuth Token
 export SLACK_APP_TOKEN="xapp-..."  # App-Level Token (for Socket Mode)
+export CLAUDE_WORKSPACE_DIR="~/my-workspace"  # Optional: Working directory for Claude
 ```
+
+**CLAUDE_WORKSPACE_DIR** (optional):
+- Sets the working directory where Claude CLI will run
+- If set, Claude will look for `.claude/slack.md` in this directory for workspace-specific configuration
+- If not set, defaults to the bot's current directory
 
 ### Slack App Setup
 
@@ -72,19 +78,48 @@ npm run build
 2. Mention the bot with your message: `@your-bot-name What is TypeScript?`
 3. Continue the conversation in the thread without mentioning
 
+## Workspace-Specific Configuration
+
+You can customize Claude's behavior per workspace by creating `.claude/slack.md`:
+
+```bash
+# In your workspace
+mkdir -p .claude
+cat > .claude/slack.md <<'EOF'
+# Project: MyApp
+
+## Your Role
+You are a code review assistant for MyApp.
+
+## Guidelines
+- Focus on TypeScript best practices
+- Reference GitHub issues when relevant
+- Be concise in responses
+EOF
+```
+
+This configuration will be automatically loaded when `CLAUDE_WORKSPACE_DIR` is set to your workspace directory.
+
 ## How It Works
 
 1. When mentioned, the bot spawns Claude Code CLI with the message
-2. Claude receives environment variables:
+2. Claude runs in the workspace directory (if `CLAUDE_WORKSPACE_DIR` is set)
+3. Claude receives environment variables:
    - `SLACK_BOT_TOKEN`: Bot token for API access
    - `SLACK_CHANNEL`: Current channel ID
    - `SLACK_THREAD_TS`: Thread timestamp
-3. Claude uses Bash tool to call Slack API directly (via curl) for:
+   - `SLACK_MESSAGE_TS`: Current message timestamp
+4. Claude loads prompts in layers:
+   - System prompts (tasks/): Bot behavior basics
+   - Workspace config (.claude/slack.md): Project-specific instructions (if exists)
+   - User message: Current request
+5. Claude uses Bash tool to call Slack API directly (via curl) for:
    - Posting messages
-   - Adding reactions
+   - Adding reactions (including :thinking_face: progress indicator)
+   - Fetching thread history when needed
    - Any other Slack actions
-4. The session ID is stored per thread for context continuation
-5. Subsequent messages in the thread automatically use the same session
+6. The session ID is stored per thread for context continuation
+7. Subsequent messages in the thread automatically use the same session
 
 ## Limitations
 

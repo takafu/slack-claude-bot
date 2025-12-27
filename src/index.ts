@@ -37,11 +37,26 @@ function buildPrompt(userMessage: string, hasSession: boolean): string {
     'utf-8'
   );
 
+  // Load workspace-specific configuration if available
+  const workspaceDir = process.env.CLAUDE_WORKSPACE_DIR || process.cwd();
+  const workspaceSlackMd = path.join(workspaceDir, '.claude', 'slack.md');
+  let workspaceConfig = '';
+
+  if (fs.existsSync(workspaceSlackMd)) {
+    workspaceConfig = `
+
+---
+
+## Workspace Configuration
+
+${fs.readFileSync(workspaceSlackMd, 'utf-8')}`;
+  }
+
   return `${slackApiGuide}
 
 ---
 
-${taskPrompt}
+${taskPrompt}${workspaceConfig}
 
 ---
 
@@ -97,8 +112,12 @@ async function callClaude(
     // Build command - escape each argument with single quotes
     const claudeCommand = ['claude', ...args].map(a => `'${a.replace(/'/g, "'\\''")}'`).join(' ');
 
+    // Get workspace directory from environment variable
+    const workspaceDir = process.env.CLAUDE_WORKSPACE_DIR || process.cwd();
+
     // Use bash directly (script command causes process not to exit)
     const proc = spawn('bash', ['-l', '-c', claudeCommand], {
+      cwd: workspaceDir, // Set working directory for Claude CLI
       stdio: ['ignore', 'pipe', 'pipe'], // Close stdin
       env: {
         ...process.env,

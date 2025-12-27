@@ -17,6 +17,7 @@ fi
 echo "Starting Slack Claude Bot..."
 echo "Bot Token: ${SLACK_BOT_TOKEN:0:20}..."
 echo "App Token: ${SLACK_APP_TOKEN:0:20}..."
+echo "Workspace: ${CLAUDE_WORKSPACE_DIR:-$(pwd)}"
 
 # Run compiled JS (lighter than ts-node)
 node dist/index.js
