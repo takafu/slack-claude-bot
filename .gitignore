@@ -34,3 +34,14 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+
+# Test scripts (local only)
+send-test-message.sh
+send-thread-reply.sh
+send-channel-message.sh
+get-bot-id.sh
+get-recent-messages.sh
+get-thread-replies.sh
+check-channel-members.sh
+check-messages.sh
+check-thread.sh

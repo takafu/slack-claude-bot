@@ -119,31 +119,40 @@ env: {
 feat: delegate Slack API control to Claude (271bc9c)
 ```
 
-## 現在の状況（2025-12-21更新）
+## 現在の状況（2025-12-27更新）
 
-### ✅ 完了・動作確認済み
-- [x] TTYエミュレーション実装（`spawn('bash')` 使用）
+### ✅ 完了・動作確認済み（全機能テスト済み）
+
+**基本機能:**
+- [x] TTYなしでClaude CLI実行（`spawn('bash')` + `stdio: ['ignore', 'pipe', 'pipe']`）
 - [x] JSON出力パース
 - [x] 環境変数経由でSlack API情報を渡す（`SLACK_CHANNEL`, `SLACK_THREAD_TS`）
 - [x] Bot側の自動投稿ロジック削除（Claude側で完全制御）
 - [x] プロンプトシステム実装（`tasks/_shared/slack-api.md`, `tasks/mention.md`）
-- [x] **動作確認成功**: Slackに返信が来ることを確認
-  - Bot ID修正: `U08UCRV618E` (test1)
-  - 実際の返信例: "テストメッセージを受信しました！ :robot_face:"
-- [x] README/ARCHITECTURE更新
-- [x] GitHubにプッシュ（https://github.com/takafu/slack-claude-bot）
-- [x] テスト用スクリプト作成（send-test-message.sh等）
+- [x] Bot自身のID取得（起動時に`auth.test`で取得）
+- [x] Bot ID判定修正（`U08UCRV618E` = test1）
 
-### ⚠️ 既知の問題
-- **Claudeプロセスが終了しない**: `spawn('bash')` で実行すると応答は返るが、プロセスが残り続ける
-  - 原因: 調査中（TTYの問題？対話モード？）
-  - 回避策: 手動でプロセスをkillする必要あり
-  - `spawn('script')` を使うとプロセスは終了するが、別の問題が発生
+**動作確認済みシナリオ:**
+1. ✅ **初回メンション** → 新セッション作成、Slackに返信
+   - 例: "テストメッセージを受信しました！ :robot_face:"
+2. ✅ **スレッド内継続** → セッションID保持、文脈継続
+   - 例: "10+10は？" → "10 + 10 = *20* です！"
+3. ✅ **自律的リアクション追加** → 返信なしでリアクションのみ
+   - 例: `:rocket:` リアクションが親メッセージに追加された
+4. ✅ **Claudeプロセス正常終了** → `stdio: ['ignore', 'pipe', 'pipe']` で解決
 
-### 🔧 次のステップ
-- Claudeプロセスが正常終了する方法を見つける
-- セッション管理のテスト（スレッド内の続き）
-- エラーハンドリング強化
+**技術的な発見:**
+- USER_TOKENで送ったメッセージ（bot_id付き）でも他のボットはイベントを受信できる
+- 自分自身のメッセージのみを除外すれば、ボット間対話が可能
+- Claudeは環境変数を正しく認識し、curlでSlack APIを呼び出せる
+- `spawn('script')` は不要（stdinを閉じれば`spawn('bash')`で十分）
+
+### 🎉 主要機能すべて動作
+
+- メンション応答
+- スレッド継続
+- 自律的アクション（リアクション、複数投稿、返信不要の判断）
+- プロセス正常終了
 
 ## 技術スタック
 

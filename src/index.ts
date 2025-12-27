@@ -56,6 +56,9 @@ const SLACK_APP_TOKEN = process.env.SLACK_APP_TOKEN!;
 // Session ID storage per thread
 const threadSessions = new Map<string, string>();
 
+// Bot user ID (will be set on startup)
+let BOT_USER_ID: string;
+
 // Initialize Slack App (Socket Mode)
 const app = new App({
   token: SLACK_BOT_TOKEN,
@@ -222,8 +225,8 @@ app.message(async ({ message, say }) => {
   // Only process messages in threads
   if (!('thread_ts' in message) || !message.thread_ts) return;
 
-  // Ignore bot messages
-  if ('bot_id' in message) return;
+  // Ignore messages from ourselves to prevent infinite loops
+  if ('user' in message && message.user === BOT_USER_ID) return;
 
   // Get message text (remove mentions)
   const rawText = 'text' in message ? message.text : '';
@@ -262,7 +265,13 @@ app.message(async ({ message, say }) => {
 // Start the app
 (async () => {
   await app.start();
+
+  // Get bot user ID
+  const authResult = await app.client.auth.test({ token: SLACK_BOT_TOKEN });
+  BOT_USER_ID = authResult.user_id as string;
+
   console.log('Slack Claude Bot is running!');
   console.log('Bot Token:', SLACK_BOT_TOKEN ? 'Set' : 'Missing');
   console.log('App Token:', SLACK_APP_TOKEN ? 'Set' : 'Missing');
+  console.log('Bot User ID:', BOT_USER_ID);
 })();
