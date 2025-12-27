@@ -248,11 +248,12 @@ app.message(async ({ message, say }) => {
   if (!sessionId) return;
 
   try {
+    const messageTs = 'ts' in message ? (message as any).ts : '';
+
     // Build prompt with instructions
     const prompt = buildPrompt(text, true); // Has session = true for thread replies
 
     // Call Claude - it will handle all Slack interactions
-    const messageTs = 'ts' in message ? (message as any).ts : '';
     const { result } = await callClaude(prompt, message.channel, message.thread_ts!, messageTs, sessionId);
 
     // Log result
