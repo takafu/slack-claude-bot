@@ -6,7 +6,8 @@ You have direct access to Slack API via environment variables. Use the Bash tool
 
 - `$SLACK_BOT_TOKEN` - Bot User OAuth Token (xoxb-...)
 - `$SLACK_CHANNEL` - Current channel ID (e.g., C08UB7LTVAX)
-- `$SLACK_THREAD_TS` - Thread timestamp (e.g., 1234567890.123456)
+- `$SLACK_THREAD_TS` - Thread timestamp (first message in thread, for posting replies)
+- `$SLACK_MESSAGE_TS` - Current message timestamp (for adding reactions to the triggering message)
 
 ## Common API Calls
 
@@ -24,6 +25,21 @@ curl -X POST https://slack.com/api/chat.postMessage \
 ```
 
 ### Add Reaction
+
+Add a reaction to the current message (the one that triggered you):
+
+```bash
+curl -X POST https://slack.com/api/reactions.add \
+  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channel": "'"${SLACK_CHANNEL}"'",
+    "timestamp": "'"${SLACK_MESSAGE_TS}"'",
+    "name": "thumbsup"
+  }'
+```
+
+To add a reaction to a specific message (e.g., the first message in thread):
 
 ```bash
 curl -X POST https://slack.com/api/reactions.add \

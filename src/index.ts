@@ -79,6 +79,7 @@ async function callClaude(
   message: string,
   channel: string,
   threadTs: string,
+  messageTs: string,
   sessionId?: string
 ): Promise<ClaudeResponse> {
   return new Promise((resolve, reject) => {
@@ -103,6 +104,7 @@ async function callClaude(
         ...process.env,
         SLACK_CHANNEL: channel,
         SLACK_THREAD_TS: threadTs,
+        SLACK_MESSAGE_TS: messageTs,
       },
     });
 
@@ -198,6 +200,7 @@ app.event('app_mention', async ({ event, say }) => {
       prompt,
       event.channel,
       threadTs,
+      event.ts, // Current message timestamp
       existingSession
     );
 
@@ -249,7 +252,8 @@ app.message(async ({ message, say }) => {
     const prompt = buildPrompt(text, true); // Has session = true for thread replies
 
     // Call Claude - it will handle all Slack interactions
-    const { result } = await callClaude(prompt, message.channel, message.thread_ts, sessionId);
+    const messageTs = 'ts' in message ? (message as any).ts : '';
+    const { result } = await callClaude(prompt, message.channel, message.thread_ts!, messageTs, sessionId);
 
     // Log result
     console.log('Claude completed. Result:', result.slice(0, 100));
