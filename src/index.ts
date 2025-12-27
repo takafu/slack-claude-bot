@@ -1,5 +1,7 @@
 import { App } from '@slack/bolt';
 import { spawn } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Convert Markdown to Slack mrkdwn format
@@ -14,6 +16,37 @@ function toSlackMarkdown(text: string): string {
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<$2|$1>')
     // List items: - to bullet
     .replace(/^(\s*)-\s+/gm, '$1• ');
+}
+
+/**
+ * Load prompt files and combine them
+ */
+function buildPrompt(userMessage: string, hasSession: boolean): string {
+  const tasksDir = path.join(__dirname, '..', 'tasks');
+
+  // Load shared Slack API guide
+  const slackApiGuide = fs.readFileSync(
+    path.join(tasksDir, '_shared', 'slack-api.md'),
+    'utf-8'
+  );
+
+  // Load task-specific prompt (mention for now, thread later)
+  const taskPrompt = fs.readFileSync(
+    path.join(tasksDir, 'mention.md'),
+    'utf-8'
+  );
+
+  return `${slackApiGuide}
+
+---
+
+${taskPrompt}
+
+---
+
+## User Message
+
+${userMessage}`;
 }
 
 // Environment variables
@@ -54,11 +87,13 @@ async function callClaude(
 
     args.push(message);
 
-    console.log('Calling Claude with args:', args);
+    console.log('Calling Claude with message length:', message.length);
 
-    // Use `script` command to emulate TTY for Claude CLI
+    // Build command - escape each argument with single quotes
     const claudeCommand = ['claude', ...args].map(a => `'${a.replace(/'/g, "'\\''")}'`).join(' ');
-    const proc = spawn('script', ['-q', '-c', `bash -l -c "${claudeCommand}"`, '/dev/null'], {
+
+    // Use bash directly (script command causes process not to exit)
+    const proc = spawn('bash', ['-l', '-c', claudeCommand], {
       env: {
         ...process.env,
         SLACK_CHANNEL: channel,
@@ -150,9 +185,12 @@ app.event('app_mention', async ({ event, say }) => {
     // Get existing session
     const existingSession = threadSessions.get(threadKey);
 
+    // Build prompt with instructions
+    const prompt = buildPrompt(text, !!existingSession);
+
     // Call Claude - it will handle all Slack interactions (messages, reactions, etc.)
     const { result, sessionId: newSessionId } = await callClaude(
-      text,
+      prompt,
       event.channel,
       threadTs,
       existingSession
@@ -202,8 +240,11 @@ app.message(async ({ message, say }) => {
   if (!sessionId) return;
 
   try {
+    // Build prompt with instructions
+    const prompt = buildPrompt(text, true); // Has session = true for thread replies
+
     // Call Claude - it will handle all Slack interactions
-    const { result } = await callClaude(text, message.channel, message.thread_ts, sessionId);
+    const { result } = await callClaude(prompt, message.channel, message.thread_ts, sessionId);
 
     // Log result
     console.log('Claude completed. Result:', result.slice(0, 100));
