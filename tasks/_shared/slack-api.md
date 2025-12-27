@@ -54,6 +54,33 @@ curl -X POST https://slack.com/api/chat.postMessage \
   -d '{"channel":"'"${SLACK_CHANNEL}"'","thread_ts":"'"${SLACK_THREAD_TS}"'","text":"Part 2"}'
 ```
 
+### Get Thread History
+
+Retrieve all messages in the current thread:
+
+```bash
+curl -s -X GET "https://slack.com/api/conversations.replies?channel=${SLACK_CHANNEL}&ts=${SLACK_THREAD_TS}" \
+  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" | jq '.messages'
+```
+
+### Get Channel History
+
+Retrieve recent messages from the channel:
+
+```bash
+curl -s -X GET "https://slack.com/api/conversations.history?channel=${SLACK_CHANNEL}&limit=50" \
+  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" | jq '.messages'
+```
+
+### Search Messages
+
+Search for specific content across the workspace:
+
+```bash
+curl -s -X GET "https://slack.com/api/search.messages?query=YOUR_SEARCH_TERM" \
+  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" | jq '.messages.matches'
+```
+
 ## Slack Markdown (mrkdwn)
 
 Use Slack's mrkdwn format for formatting:

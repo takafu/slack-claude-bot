@@ -30,9 +30,10 @@ function buildPrompt(userMessage: string, hasSession: boolean): string {
     'utf-8'
   );
 
-  // Load task-specific prompt (mention for now, thread later)
+  // Load task-specific prompt based on session state
+  const taskFile = hasSession ? 'thread.md' : 'mention.md';
   const taskPrompt = fs.readFileSync(
-    path.join(tasksDir, 'mention.md'),
+    path.join(tasksDir, taskFile),
     'utf-8'
   );
 
