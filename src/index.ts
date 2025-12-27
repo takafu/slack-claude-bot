@@ -94,6 +94,7 @@ async function callClaude(
 
     // Use bash directly (script command causes process not to exit)
     const proc = spawn('bash', ['-l', '-c', claudeCommand], {
+      stdio: ['ignore', 'pipe', 'pipe'], // Close stdin
       env: {
         ...process.env,
         SLACK_CHANNEL: channel,
