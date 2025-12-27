@@ -119,25 +119,31 @@ env: {
 feat: delegate Slack API control to Claude (271bc9c)
 ```
 
-## 現在の状況
+## 現在の状況（2025-12-21更新）
 
-### ✅ 完了
-- [x] TTYエミュレーション実装
+### ✅ 完了・動作確認済み
+- [x] TTYエミュレーション実装（`spawn('bash')` 使用）
 - [x] JSON出力パース
-- [x] 環境変数経由でSlack API情報を渡す
-- [x] Bot側の自動投稿ロジック削除
+- [x] 環境変数経由でSlack API情報を渡す（`SLACK_CHANNEL`, `SLACK_THREAD_TS`）
+- [x] Bot側の自動投稿ロジック削除（Claude側で完全制御）
+- [x] プロンプトシステム実装（`tasks/_shared/slack-api.md`, `tasks/mention.md`）
+- [x] **動作確認成功**: Slackに返信が来ることを確認
+  - Bot ID修正: `U08UCRV618E` (test1)
+  - 実際の返信例: "テストメッセージを受信しました！ :robot_face:"
 - [x] README/ARCHITECTURE更新
 - [x] GitHubにプッシュ（https://github.com/takafu/slack-claude-bot）
+- [x] テスト用スクリプト作成（send-test-message.sh等）
 
-### ⚠️ 未テスト
-- [ ] 実際にSlackからメッセージを送って動作確認
-- [ ] Claudeが環境変数を認識して使えるか
-- [ ] curlでSlack API呼び出しが成功するか
-- [ ] セッション管理が正しく動作するか
+### ⚠️ 既知の問題
+- **Claudeプロセスが終了しない**: `spawn('bash')` で実行すると応答は返るが、プロセスが残り続ける
+  - 原因: 調査中（TTYの問題？対話モード？）
+  - 回避策: 手動でプロセスをkillする必要あり
+  - `spawn('script')` を使うとプロセスは終了するが、別の問題が発生
 
-### 🔧 未解決の課題
-- マークダウン太字の問題（方針転換により優先度低下）
-- Claudeへの初期プロンプトで「Slack API使える」と伝える仕組み
+### 🔧 次のステップ
+- Claudeプロセスが正常終了する方法を見つける
+- セッション管理のテスト（スレッド内の続き）
+- エラーハンドリング強化
 
 ## 技術スタック
 
