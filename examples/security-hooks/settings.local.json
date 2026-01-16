@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/slack-security.sh write \"$TOOL_INPUT\""
+            "command": "/data/data/com.termux/files/home/test-workspace/.claude/hooks/slack-security.sh write \"$TOOL_INPUT\""
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/slack-security.sh bash \"$TOOL_INPUT\""
+            "command": "/data/data/com.termux/files/home/test-workspace/.claude/hooks/slack-security.sh"
           }
         ]
       }

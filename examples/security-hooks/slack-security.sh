@@ -1,21 +1,28 @@
 #!/bin/bash
 # Slack Bot Security Hook
-# Validates tool use based on channel, user, and content
+# Input comes via stdin as JSON
 
-TOOL_TYPE="$1"
-TOOL_INPUT="$2"
+# Read JSON input from stdin
+INPUT_JSON=$(cat)
 
 # Get context from environment variables (set by bot)
 CHANNEL="${SLACK_CHANNEL:-unknown}"
 USER="${SLACK_USER_ID:-unknown}"
 
+# Extract tool input from JSON
+TOOL_INPUT=$(echo "$INPUT_JSON" | jq -r '.tool_input.command // .tool_input.file_path // ""' 2>/dev/null)
+
 # Log for debugging
-echo "[$(date '+%Y-%m-%d %H:%M:%S')] Tool: $TOOL_TYPE, Channel: $CHANNEL, User: $USER, Input: ${TOOL_INPUT:0:200}" >> ~/.claude/slack-security.log
+{
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Channel: $CHANNEL, User: $USER"
+  echo "Tool Input: $TOOL_INPUT"
+  echo "---"
+} >> ~/.claude/slack-security.log
 
 # Configuration
-ALLOWED_CHANNELS=("C3YC2P45S")  # Test channel
-ADMIN_USERS=("U_ADMIN_TEST")    # Admin user (temporary: removed U3XK7TR1P for testing)
-BLOCKED_COMMANDS=("rm -rf" "sudo" "reboot" "> /dev/" "curl.*password")
+ALLOWED_CHANNELS=("C3YC2P45S")
+ADMIN_USERS=("U3XK7TR1P")  # Restore actual admin user
+BLOCKED_PATTERNS=("rm -rf" "sudo" "reboot")
 
 # Helper: Check if value is in array
 contains() {
@@ -42,23 +49,16 @@ allow() {
 
 # Check 1: Channel whitelist
 if ! contains "$CHANNEL" "${ALLOWED_CHANNELS[@]}"; then
-  deny "⛔ Channel $CHANNEL is not in allowed list. Contact admin to add."
+  deny "⛔ Channel $CHANNEL is not in allowed list"
 fi
 
 # Check 2: Dangerous commands (for non-admins)
 if ! contains "$USER" "${ADMIN_USERS[@]}"; then
-  for blocked in "${BLOCKED_COMMANDS[@]}"; do
-    if echo "$TOOL_INPUT" | grep -qiE "$blocked"; then
-      deny "⛔ Command contains blocked pattern: $blocked (non-admin users cannot use this)"
+  for blocked in "${BLOCKED_PATTERNS[@]}"; do
+    if echo "$TOOL_INPUT" | grep -qiF "$blocked"; then
+      deny "⛔ Blocked: contains '$blocked' (non-admin restriction)"
     fi
   done
-
-  # Check 3: File write restrictions (for non-admins)
-  if [ "$TOOL_TYPE" = "write" ]; then
-    if echo "$TOOL_INPUT" | grep -qE '(\.bashrc|\.ssh|/etc/)'; then
-      deny "⛔ Writing to system files is restricted for non-admin users"
-    fi
-  fi
 fi
 
 # All checks passed

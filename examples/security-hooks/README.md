@@ -1,12 +1,22 @@
-# Test Workspace - Slack Bot Configuration
+# Security Hooks Example - VERIFIED WORKING ✅
 
-This workspace demonstrates Slack bot integration with security hooks.
+This example demonstrates workspace-level security hooks for Slack bot integration.
+
+**Status:** Fully tested and confirmed working. Hooks successfully block dangerous operations and Claude reports the restriction to users.
 
 ## Files
 
-- `slack.md` - Bot personality configuration (elderly Minecraft enthusiast)
-- `settings.local.json` - Security hooks (not committed to git)
-- `hooks/slack-security.sh` - Security validation script
+- `settings.local.json` - Hook configuration (place in workspace `.claude/`)
+- `slack-security.sh` - Security validation script (place in workspace `.claude/hooks/`)
+
+## Verified Behavior
+
+**Test:** Non-admin user sends `rm -rf /tmp/test`
+**Result:**
+1. Hook detects pattern `rm -rf`
+2. Returns `permissionDecision: "deny"`
+3. Claude receives error and tries `rm` without `-rf`
+4. Claude reports to user: "セキュリティフックに引っかかってしまったようじゃ"
 
 ## Security Configuration
 

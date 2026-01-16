@@ -153,6 +153,80 @@ feat: delegate Slack API control to Claude (271bc9c)
 - スレッド継続
 - 自律的アクション（リアクション、複数投稿、返信不要の判断）
 - プロセス正常終了
+- ワークスペース固有設定（`.claude/slack.md`）
+- **セキュリティフック（`.claude/settings.local.json`）** ← NEW!
+
+## Phase 7: セキュリティフック実装（2026-01-11）
+
+### 環境変数追加
+
+`SLACK_USER_ID` を追加してセキュリティフックでユーザー判定を可能に：
+
+```typescript
+env: {
+  SLACK_CHANNEL: channel,
+  SLACK_THREAD_TS: threadTs,
+  SLACK_MESSAGE_TS: messageTs,
+  SLACK_USER_ID: userId,  // ← NEW
+}
+```
+
+### セキュリティフック動作確認 ✅
+
+**設定ファイル:** `.claude/settings.local.json`
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": ".claude/hooks/slack-security.sh"
+      }]
+    }]
+  }
+}
+```
+
+**検証結果:**
+1. ✅ フックが実行される（セキュリティログに記録）
+2. ✅ 環境変数が正しく渡る（CHANNEL, USER_ID）
+3. ✅ 非管理者判定が動作
+4. ✅ 危険なパターン検出（`rm -rf`）
+5. ✅ **denyが返されてブロック**
+6. ✅ Claudeがエラーを受け取る
+7. ✅ Claudeが安全な代替案を試行（`rm -rf` → `rm`）
+8. ✅ Claudeがユーザーに報告："セキュリティフックに引っかかってしまったようじゃ"
+
+**テストログ例:**
+```
+[2026-01-11 19:26:38] Channel: C3YC2P45S, User: U3XK7TR1P
+Tool Input: rm -rf ~/test-workspace/deleteme.txt
+---
+DEBUG: Checking pattern 'rm -rf' in 'rm -rf ~/test-workspace/deleteme.txt'
+(ログが途切れる = denied)
+```
+
+### セキュリティアーキテクチャ
+
+**3層のセキュリティ:**
+
+1. **Bot側チェック（未実装）** - Claude呼び出し前の簡易チェック
+2. **Claude Code フック（実装済み）** - ツール実行時の強制検証
+3. **AIガイドライン（プロンプト）** - Claude自身の判断
+
+**フック設定の階層:**
+```
+~/.claude/settings.json           # グローバル（全プロジェクト）
+workspace/.claude/settings.json   # チーム共有（git管理）
+workspace/.claude/settings.local.json  # 個人用（gitignore）← セキュリティフックはここ
+```
+
+**重要な発見:**
+- `-p` フラグでもフックは正常に動作する
+- `--dangerously-skip-permissions` でもフックのdenyは有効
+- フックへの入力はstdin経由のJSON
+- 環境変数はフック内で利用可能
 
 ## 技術スタック
 
