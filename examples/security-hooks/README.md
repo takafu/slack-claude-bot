@@ -6,8 +6,17 @@ This example demonstrates workspace-level security hooks for Slack bot integrati
 
 ## Files
 
-- `settings.local.json` - Hook configuration (place in workspace `.claude/`)
+- `settings.slack.json` - Slack-specific hook configuration (place in workspace `.claude/`)
 - `slack-security.sh` - Security validation script (place in workspace `.claude/hooks/`)
+
+## Why settings.slack.json?
+
+Using a separate settings file allows you to:
+- Keep different hooks for interactive Claude Code vs Slack bot usage
+- Share the same workspace for both contexts without conflicts
+- Gitignore Slack-specific settings while committing regular settings
+
+The bot uses `--settings .claude/settings.slack.json` flag when launching Claude.
 
 ## Verified Behavior
 

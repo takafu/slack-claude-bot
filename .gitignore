@@ -40,6 +40,7 @@ send-test-message.sh
 send-thread-reply.sh
 send-channel-message.sh
 send-dangerous-test.sh
+send-force-bash-test.sh
 get-bot-id.sh
 get-recent-messages.sh
 get-thread-replies.sh

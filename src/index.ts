@@ -99,7 +99,16 @@ async function callClaude(
   sessionId?: string
 ): Promise<ClaudeResponse> {
   return new Promise((resolve, reject) => {
+    // Get workspace directory from environment variable
+    const workspaceDir = process.env.CLAUDE_WORKSPACE_DIR || process.cwd();
+
     const args = ['-p', '--dangerously-skip-permissions', '--output-format', 'json'];
+
+    // Use Slack-specific settings if available
+    const slackSettings = path.join(workspaceDir, '.claude', 'settings.slack.json');
+    if (fs.existsSync(slackSettings)) {
+      args.push('--settings', slackSettings);
+    }
 
     // Continue existing session
     if (sessionId) {
@@ -112,9 +121,6 @@ async function callClaude(
 
     // Build command - escape each argument with single quotes
     const claudeCommand = ['claude', ...args].map(a => `'${a.replace(/'/g, "'\\''")}'`).join(' ');
-
-    // Get workspace directory from environment variable
-    const workspaceDir = process.env.CLAUDE_WORKSPACE_DIR || process.cwd();
 
     // Use bash directly (script command causes process not to exit)
     const proc = spawn('bash', ['-l', '-c', claudeCommand], {

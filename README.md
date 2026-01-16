@@ -80,7 +80,9 @@ npm run build
 
 ## Workspace-Specific Configuration
 
-You can customize Claude's behavior per workspace by creating `.claude/slack.md`:
+### Personality & Behavior (`.claude/slack.md`)
+
+You can customize Claude's behavior per workspace:
 
 ```bash
 # In your workspace
@@ -98,7 +100,20 @@ You are a code review assistant for MyApp.
 EOF
 ```
 
-This configuration will be automatically loaded when `CLAUDE_WORKSPACE_DIR` is set to your workspace directory.
+### Security Hooks (`.claude/settings.slack.json`)
+
+For workspace-specific security policies, create `.claude/settings.slack.json`:
+
+```bash
+mkdir -p .claude/hooks
+# Copy example from examples/security-hooks/
+cp path/to/examples/security-hooks/settings.slack.json .claude/
+cp path/to/examples/security-hooks/slack-security.sh .claude/hooks/
+```
+
+The bot uses `--settings .claude/settings.slack.json` when launching Claude, keeping Slack-specific hooks separate from your regular Claude Code settings.
+
+Both configurations are automatically loaded when `CLAUDE_WORKSPACE_DIR` is set to your workspace directory.
 
 ## How It Works
 
