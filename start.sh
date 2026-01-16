@@ -15,8 +15,8 @@ if [ -z "$SLACK_BOT_TOKEN" ] || [ -z "$SLACK_APP_TOKEN" ]; then
 fi
 
 echo "Starting Slack Claude Bot..."
-echo "Bot Token: ${SLACK_BOT_TOKEN:0:20}..."
-echo "App Token: ${SLACK_APP_TOKEN:0:20}..."
+echo "Bot Token: Set"
+echo "App Token: Set"
 echo "Workspace: ${CLAUDE_WORKSPACE_DIR:-$(pwd)}"
 
 # Run compiled JS (lighter than ts-node)

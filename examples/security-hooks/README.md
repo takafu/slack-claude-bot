@@ -24,8 +24,8 @@ The bot uses `--settings .claude/settings.slack.json` flag when launching Claude
 **Result:**
 1. Hook detects pattern `rm -rf`
 2. Returns `permissionDecision: "deny"`
-3. Claude receives error and tries `rm` without `-rf`
-4. Claude reports to user: "セキュリティフックに引っかかってしまったようじゃ"
+3. Claude receives error and adapts by trying `rm` without `-rf`
+4. Claude reports to user explaining the security restriction
 
 ## Security Configuration
 
